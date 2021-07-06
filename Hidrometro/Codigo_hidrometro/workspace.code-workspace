@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "..\\..\\Curso-primeiros-passos-com-freeRTOS-Codigos-master"
+		},
+		{
+			"name": "EX_09_semaforo",
+			"path": "..\\..\\EX_09_semaforo"
+		},
+		{
+			"name": "MQTT_com_FREERTOS",
+			"path": ".."
+		}
+	],
+	"settings": {}
+}
