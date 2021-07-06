@@ -18,14 +18,14 @@ const char* mqttPassword = "senha";
 int pinopir = 3;  //Pino ligado ao sensor PIR
 int acionamento;  //Variavel para guardar valor do sensor
 int volume=1;
-xTimerHandle xTimer, xTimerDHT;
+xTimerHandle xTimer;
 QueueHandle_t xFila; /*cria objeto fila */
 
-TaskHandle_t xTaskPrintHandle;
+
 TaskHandle_t xTaskADCHandle;
 TaskHandle_t xTaskSensorHandle;
 TaskHandle_t xTaskMQTTHandle;
-TaskHandle_t xTaskTecladoHandle;
+
 
 void vTaskSensor(void *pvParameters ); 
 void vTaskPrint(void *pvParameters);
@@ -67,10 +67,9 @@ if (xFila == NULL)
            &xTaskSensorHandle,          /* Handle da tarefa, opcional (nesse caso, não há) */
            APP_CPU_NUM);                /* Core */
 
-    xTaskCreatePinnedToCore(vTaskPrint,  "TaskPrint",  configMINIMAL_STACK_SIZE + 1024,  NULL,  1,  &xTaskPrintHandle,APP_CPU_NUM);
+    
     xTaskCreatePinnedToCore(vTaskMQTT,  "TaskMQTT",  configMINIMAL_STACK_SIZE + 2024,  NULL,  3,  &xTaskMQTTHandle,PRO_CPU_NUM);  
-    xTaskCreatePinnedToCore(vTaskTeclado,  "Taskteclado",  configMINIMAL_STACK_SIZE+1024 ,  (void *)BT1,  4,  &xTaskTecladoHandle,PRO_CPU_NUM);   
-
+    
     xTimerStart(xTimer,0);
     xTimerStart(xTimerDHT,0);
 
@@ -129,7 +128,7 @@ void mqttSendJsonIO(void){
      /// . produzindo mensagem
     DynamicJsonDocument doc(1024);
     doc["device"] = "ESP32";
-    doc["OUT1"] = digitalRead(OUTPUT_1);
+    doc["OUT1"] = volume;
     char JSONmessageBuffer[200];
     serializeJson(doc, JSONmessageBuffer);
     client.publish("esp32/out", JSONmessageBuffer);
@@ -139,8 +138,7 @@ void mqttSendJsonIO(void){
 /*Implementação da Task MQTT */
 void vTaskMQTT(void *pvParameters){
   (void) pvParameters;
-  //char mensagem[30];
-  //UBaseType_t uxHighWaterMark;   
+   
   int valor_recebido = 0;
 
   client.setServer(mqttServer, mqttPort);
@@ -155,11 +153,7 @@ void vTaskMQTT(void *pvParameters){
           reconect();
         }
         mqttSendJson(valor_recebido);   
-         /* Para fins de teste de ocupação de stack, printa na serial o high water mark */
-       //  uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-       //  Serial.print(pcTaskGetTaskName(NULL));
-       //  Serial.print(" : ");
-      //  Serial.println(uxHighWaterMark);
+        
 
         vTaskDelay(5000);
 
