@@ -22,7 +22,7 @@ xTimerHandle xTimer;
 QueueHandle_t xFila; /*cria objeto fila */
 
 
-TaskHandle_t xTaskADCHandle;
+
 TaskHandle_t xTaskSensorHandle;
 TaskHandle_t xTaskMQTTHandle;
 
@@ -32,9 +32,10 @@ void vTaskPrint(void *pvParameters);
 void vTaskMQTT(void *pvParameters); 
 
 void mqttInit();
-void mqttSendJsonIO(void);
+
 void rtosInit();
 void mqttSendJsonIOviatask(void);
+void callBackTimer(TimerHandle_t pxTimer );
 void setup() {
   // put your setup code here, to run once:
  rtosInit();
@@ -56,11 +57,11 @@ if (xFila == NULL)
   } 
     
     xTimer = xTimerCreate("TIMER",pdMS_TO_TICKS(2000),pdTRUE, 0, callBackTimer);
-    xTimerDHT = xTimerCreate("TIMER2",pdMS_TO_TICKS(10000),pdTRUE, 0, callBackTimerDHT);
+   
 
     xTaskCreatePinnedToCore(
       vTaskSensor,                       /* Funcao a qual esta implementado o que a tarefa deve fazer */
-       "TaskADC",                        /* Nome (para fins de debug, se necessário) */
+                             /* Nome (para fins de debug, se necessário) */
        configMINIMAL_STACK_SIZE + 1024,  /* Tamanho da stack (em words) reservada para essa tarefa */
        NULL,                             /* Parametros passados (nesse caso, não há) */
          2,                              /* Prioridade */
@@ -71,7 +72,7 @@ if (xFila == NULL)
     xTaskCreatePinnedToCore(vTaskMQTT,  "TaskMQTT",  configMINIMAL_STACK_SIZE + 2024,  NULL,  3,  &xTaskMQTTHandle,PRO_CPU_NUM);  
     
     xTimerStart(xTimer,0);
-    xTimerStart(xTimerDHT,0);
+   
 
     /* A partir deste momento, o scheduler de tarefas entra em ação e as tarefas executam */
 }
@@ -123,18 +124,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   mqttSendJsonIO();  // publica o status dos pinos via mqtt no broker
 }
 /* função que separa em json IO e envia mqtt*/
-void mqttSendJsonIO(void){
-    //Envia a mensagem ao broker
-     /// . produzindo mensagem
-    DynamicJsonDocument doc(1024);
-    doc["device"] = "ESP32";
-    doc["OUT1"] = volume;
-    char JSONmessageBuffer[200];
-    serializeJson(doc, JSONmessageBuffer);
-    client.publish("esp32/out", JSONmessageBuffer);
-    Serial.print("msg json out enviado: ");
-    Serial.println(JSONmessageBuffer);
-}
+
 /*Implementação da Task MQTT */
 void vTaskMQTT(void *pvParameters){
   (void) pvParameters;
@@ -167,6 +157,11 @@ void vTaskMQTT(void *pvParameters){
   }
 
 }
+void callBackTimer(TimerHandle_t pxTimer ){
+  digitalWrite(LED_HEART_BEAT,HIGH);
+  vTaskDelay(pdMS_TO_TICKS(100));
+  digitalWrite(LED_HEART_BEAT,LOW);
+  }
 /* função que separa em json IO e envia mqtt por meio de task*/
 void mqttSendJsonIOviatask(void){
     //Envia a mensagem ao broker
